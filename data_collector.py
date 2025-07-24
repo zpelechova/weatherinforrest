@@ -46,30 +46,15 @@ class WeatherDataCollector:
         try:
             logger.info("Collecting data from Tuya weather station...")
             
-            # Try to get device status first (direct device reading)
-            device_data = self.tuya_client.get_device_status()
-            if device_data:
-                parsed_data = self.tuya_client.parse_weather_data(
-                    device_data, source="tuya_device"
-                )
-                if parsed_data:
-                    success = self.database.insert_weather_data(parsed_data)
+            # Get device status from GARNI 925T
+            device_status = self.tuya_client.get_device_status()
+            if device_status and device_status.get('properties'):
+                # Parse the device properties into weather data format
+                weather_data = self._parse_tuya_properties(device_status['properties'])
+                if weather_data:
+                    success = self.database.insert_weather_data(weather_data)
                     if success:
                         logger.info("Successfully stored Tuya device data")
-                        return True
-            
-            # Fallback to weather API
-            weather_data = self.tuya_client.get_weather_current(
-                STATION_LATITUDE, STATION_LONGITUDE
-            )
-            if weather_data:
-                parsed_data = self.tuya_client.parse_weather_data(
-                    weather_data, source="tuya_api"
-                )
-                if parsed_data:
-                    success = self.database.insert_weather_data(parsed_data)
-                    if success:
-                        logger.info("Successfully stored Tuya weather API data")
                         return True
             
             logger.warning("No data collected from Tuya")
@@ -78,6 +63,66 @@ class WeatherDataCollector:
         except Exception as e:
             logger.error(f"Error collecting Tuya data: {e}")
             return False
+    
+    def _parse_tuya_properties(self, properties):
+        """Parse Tuya device properties into weather data format."""
+        try:
+            timestamp = datetime.now()
+            weather_data = {
+                'timestamp': timestamp,
+                'source': 'garni_925t',
+                'location': 'Prague',
+                'temperature': None,
+                'humidity': None,
+                'pressure': None,
+                'wind_speed': None,
+                'wind_direction': None,
+                'uv_index': None,
+                'brightness': None,
+                'rain_24h': None,
+                'outdoor_temp': None,
+                'outdoor_humidity': None
+            }
+            
+            # Parse each property
+            for prop in properties:
+                code = prop.get('code', '')
+                value = prop.get('value')
+                
+                if value is None:
+                    continue
+                    
+                if code == 'temp_current':
+                    weather_data['temperature'] = value / 10.0  # Convert from 10ths
+                elif code == 'temp_current_external':
+                    weather_data['outdoor_temp'] = value / 10.0
+                elif code == 'humidity_value':
+                    weather_data['humidity'] = float(value)
+                elif code == 'humidity_outdoor':
+                    weather_data['outdoor_humidity'] = float(value)
+                elif code == 'atmospheric_pressture':
+                    weather_data['pressure'] = value / 100.0  # Convert to hPa
+                elif code == 'windspeed_avg':
+                    weather_data['wind_speed'] = value / 10.0  # Convert from 10ths
+                elif code == 'wind_dir360':
+                    weather_data['wind_direction'] = float(value)
+                elif code == 'uv_index':
+                    weather_data['uv_index'] = value / 10.0
+                elif code == 'bright_value':
+                    weather_data['brightness'] = float(value)
+                elif code == 'rain_24h':
+                    weather_data['rain_24h'] = value / 10.0  # Convert from mm*10
+            
+            # Only return data if we have at least temperature or pressure
+            if weather_data['temperature'] is not None or weather_data['pressure'] is not None:
+                return weather_data
+            else:
+                logger.warning("No valid weather measurements found in Tuya data")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error parsing Tuya properties: {e}")
+            return None
     
     def collect_meteostat_data(self) -> bool:
         """Collect historical data from Meteostat."""

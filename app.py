@@ -10,7 +10,7 @@ from io import BytesIO
 
 # Import custom modules
 from database import WeatherDatabase
-from data_collector import get_collector
+from data_collector import WeatherDataCollector
 from tuya_client import TuyaWeatherClient
 from weather_analysis import (
     WeatherAnalyzer, create_time_series_chart, create_correlation_heatmap,
@@ -366,6 +366,51 @@ def display_dashboard_overview():
             
         elif status["status"] == "connected":
             st.success("✅ **GARNI 925T Connected and Collecting Data**")
+            
+            # Show current live data
+            try:
+                device_status = tuya_client.get_device_status()
+                if device_status and device_status.get('properties'):
+                    st.subheader("📊 Current Weather Conditions")
+                    
+                    # Parse and display current readings
+                    properties = device_status['properties']
+                    readings = {}
+                    
+                    for prop in properties:
+                        code = prop.get('code', '')
+                        value = prop.get('value')
+                        
+                        if code == 'temp_current' and value is not None:
+                            readings['Indoor Temp'] = f"{value/10:.1f}°C"
+                        elif code == 'temp_current_external' and value is not None:
+                            readings['Outdoor Temp'] = f"{value/10:.1f}°C"
+                        elif code == 'humidity_value' and value is not None:
+                            readings['Indoor Humidity'] = f"{value}%"
+                        elif code == 'humidity_outdoor' and value is not None:
+                            readings['Outdoor Humidity'] = f"{value}%"
+                        elif code == 'atmospheric_pressture' and value is not None:
+                            readings['Pressure'] = f"{value/100:.1f} hPa"
+                        elif code == 'windspeed_avg' and value is not None:
+                            readings['Wind Speed'] = f"{value/10:.1f} m/s"
+                        elif code == 'uv_index' and value is not None:
+                            readings['UV Index'] = f"{value/10:.1f}"
+                        elif code == 'bright_value' and value is not None:
+                            readings['Brightness'] = f"{value} lux"
+                    
+                    if readings:
+                        cols = st.columns(4)
+                        for i, (label, value) in enumerate(readings.items()):
+                            with cols[i % 4]:
+                                st.metric(label, value)
+                    
+                    # Collect current data point
+                    collector = WeatherDataCollector()
+                    collector.collect_tuya_data()
+                    st.info("💾 Latest data point saved to database")
+                    
+            except Exception as e:
+                st.warning(f"Could not fetch live data: {e}")
         else:
             st.warning(f"⚠️ **Status:** {status['status']}")
             
