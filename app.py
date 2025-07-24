@@ -307,6 +307,7 @@ def display_historical_data_export():
     with col2:
         st.metric("Parameters", len([col for col in garni_df.columns if garni_df[col].notna().any()]))
     with col3:
+        import pandas as pd
         min_date = pd.to_datetime(garni_df['timestamp']).min()
         max_date = pd.to_datetime(garni_df['timestamp']).max()
         st.metric("Date Range", f"{min_date.strftime('%m/%d')} - {max_date.strftime('%m/%d')}")
