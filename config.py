@@ -5,7 +5,7 @@ import os
 # Tuya API Configuration
 TUYA_ACCESS_ID = os.getenv("TUYA_ACCESS_ID", "")
 TUYA_ACCESS_KEY = os.getenv("TUYA_ACCESS_KEY", "")
-TUYA_API_ENDPOINT = os.getenv("TUYA_API_ENDPOINT", "https://openapi.tuyacn.com")
+TUYA_API_ENDPOINT = os.getenv("TUYA_API_ENDPOINT", "https://openapi.tuyaeu.com")
 TUYA_DEVICE_ID = os.getenv("TUYA_DEVICE_ID", "")
 
 # Database Configuration

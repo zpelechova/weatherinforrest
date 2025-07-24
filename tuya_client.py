@@ -35,10 +35,25 @@ class TuyaWeatherClient:
                           body: str = "") -> str:
         """Generate signature for Tuya API authentication."""
         try:
+            # Parse URL to get path and query
+            from urllib.parse import urlparse
+            parsed_url = urlparse(url)
+            url_path = parsed_url.path
+            if parsed_url.query:
+                url_path += "?" + parsed_url.query
+            
+            # Create content hash
+            content_hash = hashlib.sha256(body.encode()).hexdigest()
+            
+            # Create headers string (only specific headers for signature)
+            sign_headers = []
+            for key in sorted(headers.keys()):
+                if key.lower() in ['client_id', 'access_token', 'sign_method', 't']:
+                    sign_headers.append(f"{key}:{headers[key]}")
+            headers_str = "\n".join(sign_headers)
+            
             # Create string to sign
-            string_to_sign = f"{method}\n{hashlib.sha256(body.encode()).hexdigest()}\n"
-            string_to_sign += "\n".join([f"{k}:{v}" for k, v in sorted(headers.items())])
-            string_to_sign += f"\n{url}"
+            string_to_sign = f"{method}\n{content_hash}\n{headers_str}\n{url_path}"
             
             # Generate signature
             signature = hmac.new(
@@ -59,33 +74,58 @@ class TuyaWeatherClient:
                 datetime.now() < self.token_expires):
                 return True
             
-            url = f"{self.api_endpoint}/v1.0/token?grant_type=1"
-            timestamp = str(int(time.time() * 1000))
+            # Try different regional endpoints
+            endpoints = [
+                "https://openapi.tuyaeu.com",
+                "https://openapi.tuyaus.com", 
+                "https://openapi.tuyacn.com"
+            ]
             
-            headers = {
-                "client_id": self.access_id,
-                "sign_method": "HMAC-SHA256",
-                "t": timestamp,
-            }
+            for endpoint in endpoints:
+                try:
+                    url = f"{endpoint}/v1.0/token?grant_type=1"
+                    timestamp = str(int(time.time() * 1000))
+                    
+                    # Create headers for signature
+                    headers = {
+                        "client_id": self.access_id,
+                        "sign_method": "HMAC-SHA256",
+                        "t": timestamp,
+                    }
+                    
+                    # Generate signature - corrected format
+                    content_hash = hashlib.sha256("".encode()).hexdigest()
+                    headers_str = f"client_id:{self.access_id}\nsign_method:HMAC-SHA256\nt:{timestamp}"
+                    string_to_sign = f"GET\n{content_hash}\n{headers_str}\n/v1.0/token?grant_type=1"
+                    
+                    signature = hmac.new(
+                        self.access_key.encode(),
+                        string_to_sign.encode(),
+                        hashlib.sha256
+                    ).hexdigest().upper()
+                    
+                    headers["sign"] = signature
+                    
+                    response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+                    data = response.json()
+                    
+                    if data.get("success"):
+                        result = data.get("result", {})
+                        self.token = result.get("access_token")
+                        expire_time = result.get("expire_time", 7200)
+                        self.token_expires = datetime.now() + timedelta(seconds=expire_time - 60)
+                        self.api_endpoint = endpoint  # Use working endpoint
+                        logger.info(f"Successfully obtained Tuya access token from {endpoint}")
+                        return True
+                    else:
+                        logger.warning(f"Token request failed for {endpoint}: {data}")
+                        
+                except Exception as e:
+                    logger.warning(f"Error with endpoint {endpoint}: {e}")
+                    continue
             
-            # Generate signature
-            sign = self._generate_signature("GET", url, headers)
-            headers["sign"] = sign
-            
-            response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-            response.raise_for_status()
-            
-            data = response.json()
-            if data.get("success"):
-                result = data.get("result", {})
-                self.token = result.get("access_token")
-                expire_time = result.get("expire_time", 7200)
-                self.token_expires = datetime.now() + timedelta(seconds=expire_time - 60)
-                logger.info("Successfully obtained Tuya access token")
-                return True
-            else:
-                logger.error(f"Failed to get token: {data}")
-                return False
+            logger.error("Failed to get token from all endpoints")
+            return False
                 
         except Exception as e:
             logger.error(f"Error getting Tuya token: {e}")
