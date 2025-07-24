@@ -55,13 +55,41 @@ def display_configuration_status():
         st.sidebar.success("✅ Tuya API Configured")
     else:
         st.sidebar.error("❌ Tuya API Not Configured")
-        st.sidebar.info("Set TUYA_ACCESS_ID and TUYA_ACCESS_KEY environment variables")
+        with st.sidebar.expander("🔧 Setup Help"):
+            st.markdown("""
+            **Need help finding your Tuya credentials?**
+            
+            1. **Create Tuya Developer Account**:
+               - Go to [iot.tuya.com](https://iot.tuya.com)
+               - Create a "Cloud Development" project
+               
+            2. **Get API Credentials**:
+               - Access ID (TUYA_ACCESS_ID)
+               - Access Secret (TUYA_ACCESS_KEY)
+               
+            3. **Find Device ID**:
+               - Open Tuya Smart app
+               - Go to device settings
+               - Copy Device ID (TUYA_DEVICE_ID)
+            
+            📖 See SETUP_GUIDE.md for detailed instructions
+            """)
     
     if config["location_configured"]:
         st.sidebar.success(f"✅ Location: {STATION_LATITUDE:.2f}, {STATION_LONGITUDE:.2f}")
     else:
         st.sidebar.error("❌ Location Not Configured")
-        st.sidebar.info("Set STATION_LATITUDE and STATION_LONGITUDE environment variables")
+        with st.sidebar.expander("📍 Location Setup"):
+            st.markdown("""
+            **Set your weather station location**:
+            
+            1. Go to [Google Maps](https://maps.google.com)
+            2. Find your weather station location
+            3. Right-click and copy coordinates
+            4. Set environment variables:
+               - STATION_LATITUDE (e.g., 50.0755)
+               - STATION_LONGITUDE (e.g., 14.4378)
+            """)
     
     return all(config.values())
 
@@ -461,6 +489,90 @@ def display_data_export():
         
         st.success(f"✅ Data export ready! ({len(df)} records)")
 
+def display_setup_guide():
+    """Display setup guide and connection testing."""
+    st.header("⚙️ Setup Your GARNI 925T Weather Station")
+    
+    st.markdown("""
+    Welcome! To connect your weather station to this monitoring platform, you'll need to set up 
+    your Tuya API credentials and location information.
+    """)
+    
+    # Step-by-step guide
+    st.subheader("📋 Setup Steps")
+    
+    with st.expander("1️⃣ Create Tuya Developer Account", expanded=True):
+        st.markdown("""
+        1. Visit [Tuya IoT Platform](https://iot.tuya.com)
+        2. Sign up using the same email as your Tuya Smart app
+        3. Create a new "Cloud Development" project:
+           - Project Name: "Weather Station Monitor"
+           - Industry: "Smart Home" 
+           - Development Method: "Smart Home PaaS"
+        4. After creation, note your **Access ID** and **Access Secret**
+        """)
+    
+    with st.expander("2️⃣ Find Your Device ID"):
+        st.markdown("""
+        **Method 1 - Tuya Smart App:**
+        1. Open Tuya Smart app on your phone
+        2. Find your GARNI 925T weather station
+        3. Tap device → Edit (pencil icon) → Device Information
+        4. Copy the Device ID (long string like "bf1234567890abcdef")
+        
+        **Method 2 - Developer Platform:**
+        1. In your Tuya project, go to "Devices" tab
+        2. Click "Link Tuya App Account" and scan QR code
+        3. Your weather station will appear in the device list
+        """)
+    
+    with st.expander("3️⃣ Get Your Location Coordinates"):
+        st.markdown("""
+        1. Go to [Google Maps](https://maps.google.com)
+        2. Find your weather station's exact location
+        3. Right-click on the location
+        4. Copy the coordinates (e.g., "50.0755, 14.4378")
+        5. First number = Latitude, Second = Longitude
+        """)
+    
+    st.subheader("🔑 Enter Your Credentials")
+    st.info("After getting your credentials, click the 'Secrets' button in the sidebar to enter them securely.")
+    
+    # Connection test section
+    st.subheader("🧪 Test Connection")
+    
+    if st.button("Test Tuya API Connection"):
+        tuya_client = TuyaWeatherClient()
+        
+        with st.spinner("Testing connection..."):
+            success = tuya_client.test_connection()
+        
+        if success:
+            st.success("✅ Connection successful! Your Tuya API is working.")
+            
+            # Try to get device status
+            device_status = tuya_client.get_device_status()
+            if device_status:
+                st.success("✅ Weather station found and responding!")
+                st.json(device_status)
+            else:
+                st.warning("⚠️ API works, but couldn't get device data. Check your Device ID.")
+        else:
+            st.error("❌ Connection failed. Please check your credentials.")
+    
+    # Quick start section
+    st.subheader("🚀 Quick Start")
+    st.markdown("""
+    Once your credentials are set up:
+    
+    1. **Test the connection** using the button above
+    2. **Start data collection** in the sidebar
+    3. **View live data** in the Current Conditions tab
+    4. **Analyze trends** after collecting some data
+    
+    The system will automatically collect data every 15 minutes and store it for long-term analysis.
+    """)
+
 def main():
     """Main application function."""
     st.title("🌤️ Weather Monitoring & Analysis Platform")
@@ -480,11 +592,20 @@ def main():
             st.error("⚠️ Configuration incomplete. Check environment variables.")
             collection_status = {"is_running": False, "database_stats": {}}
     
-    # Main content tabs
-    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-        "🏠 Dashboard", "📈 Time Series", "📊 Trends", 
-        "🔗 Correlations", "🌤️ Current", "💾 Export"
-    ])
+    # Add setup tab if not configured
+    if not config_ok:
+        tab_setup, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            "⚙️ Setup", "🏠 Dashboard", "📈 Time Series", "📊 Trends", 
+            "🔗 Correlations", "🌤️ Current", "💾 Export"
+        ])
+        
+        with tab_setup:
+            display_setup_guide()
+    else:
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+            "🏠 Dashboard", "📈 Time Series", "📊 Trends", 
+            "🔗 Correlations", "🌤️ Current", "💾 Export"
+        ])
     
     with tab1:
         display_dashboard_overview()
