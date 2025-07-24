@@ -84,11 +84,11 @@ class LocalTuyaClient:
         print("2. Device local key (extracted from Smart Life app)")
         print("3. Direct IP connection to bypass cloud API")
         
-        # Provide realistic simulation based on Prague weather patterns
+        # Provide realistic simulation based on Kozlovice weather patterns
         import random
         current_time = datetime.now()
         
-        # Prague-like weather simulation
+        # Kozlovice-like weather simulation
         base_temp = 15 + 10 * random.random()  # 15-25°C range
         humidity = 45 + 30 * random.random()   # 45-75% range
         pressure = 1010 + 20 * random.random() # 1010-1030 hPa
@@ -100,7 +100,7 @@ class LocalTuyaClient:
             'pressure': round(pressure, 1),
             'source': 'simulation',
             'device_id': self.device_id,
-            'location': 'Prague (50.4489643, 14.3095035)',
+            'location': 'Kozlovice (50.4489643, 14.3095035)',
             'note': 'Simulated data - GARNI 925T cloud connection unavailable'
         }
         

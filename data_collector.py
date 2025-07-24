@@ -71,7 +71,7 @@ class WeatherDataCollector:
             weather_data = {
                 'timestamp': timestamp,
                 'source': 'garni_925t',
-                'location': 'Unknown Location',
+                'location': 'Kozlovice',
                 'temperature': None,
                 'humidity': None,
                 'pressure': None,

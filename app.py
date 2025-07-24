@@ -113,7 +113,7 @@ def display_configuration_status():
     
     if config["location_configured"]:
         st.sidebar.success("✅ Location Configured")
-        st.sidebar.text(f"📍 Prague ({STATION_LATITUDE:.4f}, {STATION_LONGITUDE:.4f})")
+        st.sidebar.text(f"📍 Kozlovice ({STATION_LATITUDE:.4f}, {STATION_LONGITUDE:.4f})")
     else:
         st.sidebar.error("❌ Location Not Configured")
         with st.sidebar.expander("🔧 Setup Help"):
@@ -434,7 +434,7 @@ def display_dashboard_overview():
             **System Status:**
             - ✅ Streamlit dashboard fully functional
             - ✅ Database system ready
-            - ✅ Location configured for Prague
+            - ✅ Location configured for Kozlovice
             - ✅ All analysis features working
             - ⚠️ Awaiting GARNI 925T API access resolution
             
