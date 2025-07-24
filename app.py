@@ -264,6 +264,77 @@ def display_current_conditions():
         st.info(f"Last updated: {latest['timestamp']}")
         st.info(f"Data source: {latest['source']}")
 
+def display_historical_data_export():
+    """Export historical data from GARNI 925T weather station"""
+    st.header("📤 Historical Data Export - GARNI 925T")
+    
+    st.info("📡 Export data exclusively from your GARNI 925T weather station in Kozlovice")
+    
+    # Export options
+    col1, col2 = st.columns(2)
+    with col1:
+        export_days = st.selectbox(
+            "📅 Export Period",
+            [7, 14, 30, 60, 90, 180, 365],
+            index=2,
+            format_func=lambda x: f"Last {x} days"
+        )
+    
+    with col2:
+        export_format = st.selectbox(
+            "📄 Format",
+            ["CSV", "Excel"],
+            index=0
+        )
+    
+    # Get GARNI data
+    db = WeatherDatabase()
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=export_days)
+    
+    df = db.get_data_by_date_range(start_date, end_date)
+    garni_df = df[df['source'] == 'garni_925t'].copy() if not df.empty else pd.DataFrame()
+    
+    if garni_df.empty:
+        st.warning("No GARNI 925T data available for export in the selected period.")
+        return
+    
+    # Show preview
+    st.subheader("📋 Data Preview")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Records", len(garni_df))
+    with col2:
+        st.metric("Parameters", len([col for col in garni_df.columns if garni_df[col].notna().any()]))
+    with col3:
+        st.metric("Date Range", f"{garni_df['timestamp'].min().strftime('%m/%d')} - {garni_df['timestamp'].max().strftime('%m/%d')}")
+    
+    # Show sample data
+    st.dataframe(garni_df.head(10), use_container_width=True)
+    
+    # Export button
+    if st.button("📤 Export Data", type="primary"):
+        if export_format == "CSV":
+            csv = garni_df.to_csv(index=False)
+            st.download_button(
+                label="💾 Download CSV File",
+                data=csv,
+                file_name=f"garni_925t_data_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.csv",
+                mime="text/csv"
+            )
+        else:  # Excel
+            from io import BytesIO
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                garni_df.to_excel(writer, sheet_name='GARNI_925T_Data', index=False)
+            
+            st.download_button(
+                label="💾 Download Excel File",
+                data=output.getvalue(),
+                file_name=f"garni_925t_data_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
 def display_time_series_analysis():
     """Display time-series analysis and charts."""
     st.header("📈 Time Series Analysis")
@@ -281,7 +352,7 @@ def display_time_series_analysis():
             value=datetime.now().date()
         )
     
-    # Get data for selected range
+    # Get data for selected range - GARNI 925T only
     db = WeatherDatabase()
     start_datetime = datetime.combine(start_date, datetime.min.time())
     end_datetime = datetime.combine(end_date, datetime.max.time())
@@ -290,7 +361,18 @@ def display_time_series_analysis():
     
     if df.empty:
         st.warning("No data available for the selected date range.")
+        st.info("💡 Data is automatically collected from your GARNI 925T weather station when connected.")
         return
+    
+    # Filter for GARNI 925T data only
+    garni_df = df[df['source'] == 'garni_925t'].copy()
+    
+    if garni_df.empty:
+        st.warning("No GARNI 925T data available for the selected date range.")
+        st.info("📡 Only showing data from your GARNI 925T weather station in Kozlovice.")
+        return
+    
+    df = garni_df  # Use only GARNI data
     
     # Parameter selection
     available_params = [col for col in df.columns if col not in ['id', 'timestamp', 'source', 'created_at', 'condition']]
@@ -481,19 +563,42 @@ def display_dashboard_overview():
                 st.metric("Primary Source", f"{primary_source} ({sources[primary_source]} records)")
 
 def display_trend_analysis():
-    """Display trend analysis and patterns."""
-    st.header("📊 Trend Analysis")
+    """Display trend analysis and patterns for GARNI 925T data."""
+    st.header("📊 Trend Analysis - GARNI 925T")
     
-    # Get data for analysis
+    # Analysis period selector
+    col1, col2 = st.columns(2)
+    with col1:
+        days = st.selectbox(
+            "📅 Analysis Period",
+            [7, 14, 30, 60, 90],
+            index=2,
+            format_func=lambda x: f"Last {x} days"
+        )
+    
+    with col2:
+        st.info("📡 Data Source: GARNI 925T (Kozlovice)")
+    
+    # Get data for analysis - GARNI only
     db = WeatherDatabase()
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)  # Last 30 days
+    start_date = end_date - timedelta(days=days)
     
     df = db.get_data_by_date_range(start_date, end_date)
     
     if df.empty:
         st.warning("No data available for trend analysis.")
+        st.info("💡 Historical data builds up as your GARNI 925T station collects measurements.")
         return
+    
+    # Filter for GARNI 925T data only
+    garni_df = df[df['source'] == 'garni_925t'].copy()
+    
+    if garni_df.empty:
+        st.warning("No GARNI 925T data available for the selected period.")
+        return
+    
+    df = garni_df  # Use only GARNI data
     
     analyzer = WeatherAnalyzer(df)
     
@@ -550,16 +655,40 @@ def display_correlation_analysis():
     """Display correlation analysis between weather parameters."""
     st.header("🔗 Correlation Analysis")
     
-    # Get data
+    # Analysis period selector
+    col1, col2 = st.columns(2)
+    with col1:
+        days = st.selectbox(
+            "📅 Analysis Period",
+            [14, 30, 60, 90, 180],
+            index=1,
+            format_func=lambda x: f"Last {x} days",
+            key="corr_days"
+        )
+    
+    with col2:
+        st.info("📡 Data Source: GARNI 925T (Kozlovice)")
+    
+    # Get data - GARNI only
     db = WeatherDatabase()
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=30)
+    start_date = end_date - timedelta(days=days)
     
     df = db.get_data_by_date_range(start_date, end_date)
     
     if df.empty:
         st.warning("No data available for correlation analysis.")
+        st.info("💡 Correlation analysis requires historical data from your GARNI 925T station.")
         return
+    
+    # Filter for GARNI 925T data only
+    garni_df = df[df['source'] == 'garni_925t'].copy()
+    
+    if garni_df.empty:
+        st.warning("No GARNI 925T data available for correlation analysis.")
+        return
+    
+    df = garni_df  # Use only GARNI data
     
     # Available parameters
     numeric_params = [col for col in df.columns if col not in ['id', 'timestamp', 'source', 'created_at', 'condition']]
@@ -799,7 +928,7 @@ def main():
         display_current_conditions()
     
     with tab6:
-        display_data_export()
+        display_historical_data_export()
     
     # Footer
     st.markdown("---")
