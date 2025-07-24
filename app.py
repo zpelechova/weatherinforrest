@@ -311,6 +311,25 @@ def display_historical_data_export():
         max_date = pd.to_datetime(garni_df['timestamp']).max()
         st.metric("Date Range", f"{min_date.strftime('%m/%d')} - {max_date.strftime('%m/%d')}")
     
+    # Collection statistics
+    if not garni_df.empty:
+        try:
+            from auto_collector_service import get_daily_stats
+            daily_stats = get_daily_stats(7)  # Last 7 days
+            
+            if daily_stats:
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Total Readings (7d)", daily_stats['total_readings'])
+                with col2:
+                    st.metric("Daily Average", f"{daily_stats['daily_average']:.1f}")
+                with col3:
+                    st.metric("Best Day", daily_stats['best_day'])
+                with col4:
+                    st.metric("Target", "288/day")
+        except:
+            pass
+    
     # Show sample data
     st.dataframe(garni_df.head(10), use_container_width=True)
     
@@ -380,20 +399,129 @@ def display_historical_data_export():
                     st.error(f"Error: {e}")
     
     with col3:
-        # Show collection frequency recommendation
-        if not garni_df.empty:
-            recent_data = garni_df[pd.to_datetime(garni_df['timestamp']) > (pd.Timestamp.now() - pd.Timedelta(days=1))]
-            today_count = len(recent_data)
+        # Automatic collection control
+        try:
+            from auto_collector_service import get_status, start_service, stop_service
             
-            if today_count < 24:
-                st.warning(f"⚠️ Only {today_count} readings today\nRecommend: Enable frequent collection")
+            status = get_status()
+            
+            if status['is_running']:
+                st.success("🔄 Auto-collection: ACTIVE")
+                if st.button("⏹️ Stop Auto Collection"):
+                    stop_service()
+                    st.rerun()
+                
+                # Show next collection time
+                if status.get('next_collection'):
+                    next_time = status['next_collection'].strftime('%H:%M:%S')
+                    st.info(f"Next collection: {next_time}")
+                
+                # Show success rate
+                stats = status['stats']
+                if stats['total_collections'] > 0:
+                    success_rate = (stats['successful_collections'] / stats['total_collections']) * 100
+                    st.metric("Success Rate", f"{success_rate:.1f}%")
             else:
-                st.success(f"✅ {today_count} readings today\nGood collection rate!")
-        else:
-            st.info("💡 Enable automatic collection for comprehensive data")
+                st.warning("⏸️ Auto-collection: STOPPED")
+                if st.button("▶️ Start Auto Collection (5min intervals)"):
+                    start_service()
+                    st.success("Started automatic collection every 5 minutes!")
+                    st.rerun()
+        except Exception as e:
+            st.error(f"Auto-collection error: {e}")
+    
+    # Historical data import section
+    st.subheader("📥 Import Historical Data from Smart Life App")
+    
+    st.info("""
+    **To import your complete historical data:**
+    
+    1. **Open Smart Life app** on your phone/tablet
+    2. **Navigate to your GARNI 925T device**
+    3. **Find the History or Statistics section**
+    4. **Look for Export, Share, or Download button**
+    5. **Export data as CSV or Excel file**
+    6. **Upload the file below**
+    
+    This will give you months of comprehensive historical data!
+    """)
+    
+    # File upload for historical data
+    uploaded_file = st.file_uploader(
+        "Upload Smart Life app export file",
+        type=['csv', 'xlsx', 'xls'],
+        help="Export historical data from Smart Life app and upload here"
+    )
+    
+    if uploaded_file is not None:
+        try:
+            import pandas as pd
+            
+            # Read the uploaded file
+            if uploaded_file.name.endswith('.csv'):
+                df_import = pd.read_csv(uploaded_file)
+            else:
+                df_import = pd.read_excel(uploaded_file)
+            
+            st.success(f"✅ File loaded: {len(df_import)} rows")
+            
+            # Show preview
+            st.subheader("Preview of imported data:")
+            st.dataframe(df_import.head(), use_container_width=True)
+            
+            # Process and import button
+            if st.button("🔄 Process and Import Historical Data"):
+                with st.spinner("Processing historical data..."):
+                    try:
+                        from smart_life_import import SmartLifeImporter
+                        
+                        importer = SmartLifeImporter()
+                        result = importer.import_historical_data(df_import)
+                        
+                        if result['success']:
+                            st.success(f"""
+                            ✅ **Historical Data Import Successful!**
+                            
+                            📊 **Results:**
+                            - Imported: {result['imported_count']} new readings
+                            - Skipped: {result['skipped_count']} duplicates  
+                            - Total processed: {result['total_processed']} records
+                            
+                            🎉 Your dashboard now has comprehensive historical data!
+                            """)
+                            
+                            # Show analysis details
+                            analysis = result['analysis']
+                            st.info(f"""
+                            **Data Analysis:**
+                            - Detected format: {analysis['suspected_format']}
+                            - Weather parameters found: {len(analysis['weather_columns'])}
+                            - Timestamp columns: {len(analysis['timestamp_columns'])}
+                            """)
+                            
+                            st.rerun()
+                        else:
+                            st.error(f"❌ Import failed: {result['error']}")
+                            
+                            if result.get('analysis'):
+                                st.info("**File Analysis:**")
+                                analysis = result['analysis']
+                                st.json({
+                                    'columns': analysis['columns'],
+                                    'suspected_format': analysis['suspected_format'],
+                                    'weather_columns': analysis['weather_columns'],
+                                    'timestamp_columns': analysis['timestamp_columns']
+                                })
+                                
+                    except Exception as e:
+                        st.error(f"Import error: {e}")
+                        st.info("Please check your file format and try again.")
+                    
+        except Exception as e:
+            st.error(f"Error reading file: {e}")
     
     # Export button
-    if st.button("📤 Export Data", type="primary"):
+    if st.button("📤 Export Current Data", type="primary"):
         if export_format == "CSV":
             csv = garni_df.to_csv(index=False)
             st.download_button(
