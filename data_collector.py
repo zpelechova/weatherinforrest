@@ -71,7 +71,7 @@ class WeatherDataCollector:
             weather_data = {
                 'timestamp': timestamp,
                 'source': 'garni_925t',
-                'location': 'Prague',
+                'location': 'Unknown Location',
                 'temperature': None,
                 'humidity': None,
                 'pressure': None,
