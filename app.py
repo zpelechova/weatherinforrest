@@ -314,32 +314,83 @@ def display_historical_data_export():
     # Show sample data
     st.dataframe(garni_df.head(10), use_container_width=True)
     
-    # Historical data import section
-    st.subheader("📥 Import More Historical Data")
+    # Historical data collection status
+    st.subheader("📊 Historical Data Status")
     
+    # Show data collection information
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("🔄 Refresh Device Memory", help="Extract more historical data from your GARNI 925T device"):
-            with st.spinner("Extracting historical data from device..."):
+        if not garni_df.empty:
+            earliest = pd.to_datetime(garni_df['timestamp']).min()
+            years_back = (pd.Timestamp.now() - earliest).days / 365.25
+            daily_avg = len(garni_df) / max((pd.Timestamp.now() - earliest).days, 1)
+            
+            st.metric("Total Readings", len(garni_df))
+            st.metric("Time Span", f"{years_back:.1f} years")
+            st.metric("Daily Average", f"{daily_avg:.1f} readings/day")
+        else:
+            st.warning("No historical data available")
+    
+    with col2:
+        st.info("""
+        **Historical Data Limitation:**
+        
+        Tuya Trial API only provides sparse historical readings, not the comprehensive daily logs visible in Smart Life app.
+        
+        **Solutions:**
+        1. **Upgrade to Tuya IoT Core** - Get full historical access
+        2. **Export from Smart Life app** - Use app's export feature  
+        3. **Continuous collection** - Build comprehensive data going forward
+        """)
+    
+    # Enhanced collection options
+    st.subheader("🔄 Data Collection Options")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("📥 Try Device Memory", help="Extract sparse historical data from device memory"):
+            with st.spinner("Extracting available historical data..."):
                 try:
                     from decode_historical_data import HistoricalDataDecoder
                     decoder = HistoricalDataDecoder()
                     imported_count = decoder.store_historical_data()
                     
                     if imported_count > 0:
-                        st.success(f"✅ Imported {imported_count} new historical readings!")
+                        st.success(f"✅ Imported {imported_count} additional readings!")
                         st.rerun()
                     else:
-                        st.info("No new historical data found. All available data already imported.")
+                        st.info("All available sparse data already imported.")
                 except Exception as e:
-                    st.error(f"Error importing historical data: {e}")
+                    st.error(f"Error: {e}")
     
     with col2:
-        # Show current historical data stats
+        if st.button("🔄 Collect Now", help="Collect current weather data immediately"):
+            with st.spinner("Collecting current data..."):
+                try:
+                    from data_collector import WeatherDataCollector
+                    collector = WeatherDataCollector()
+                    success = collector.collect_tuya_data()
+                    
+                    if success:
+                        st.success("✅ Current data collected!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Collection failed")
+                except Exception as e:
+                    st.error(f"Error: {e}")
+    
+    with col3:
+        # Show collection frequency recommendation
         if not garni_df.empty:
-            earliest = pd.to_datetime(garni_df['timestamp']).min()
-            years_back = (pd.Timestamp.now() - earliest).days / 365.25
-            st.info(f"📊 Current data: {len(garni_df)} readings\n📅 Going back {years_back:.1f} years")
+            recent_data = garni_df[pd.to_datetime(garni_df['timestamp']) > (pd.Timestamp.now() - pd.Timedelta(days=1))]
+            today_count = len(recent_data)
+            
+            if today_count < 24:
+                st.warning(f"⚠️ Only {today_count} readings today\nRecommend: Enable frequent collection")
+            else:
+                st.success(f"✅ {today_count} readings today\nGood collection rate!")
+        else:
+            st.info("💡 Enable automatic collection for comprehensive data")
     
     # Export button
     if st.button("📤 Export Data", type="primary"):
