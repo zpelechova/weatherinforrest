@@ -13,4 +13,5 @@ dependencies = [
     "schedule>=1.2.2",
     "streamlit>=1.47.0",
     "tinytuya>=1.17.2",
+    "trafilatura>=2.0.0",
 ]
