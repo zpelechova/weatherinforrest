@@ -189,19 +189,16 @@ class WeatherDataCollector:
             return False
     
     def run_collection_cycle(self):
-        """Run a single data collection cycle."""
-        logger.info("Starting data collection cycle...")
+        """Run a single data collection cycle - GARNI 925T only."""
+        logger.info("Starting data collection cycle from GARNI 925T weather station...")
         
-        # Try Tuya data first
+        # Only collect from Tuya weather station
         tuya_success = self.collect_tuya_data()
         
-        # Collect Meteostat data as backup/supplement
-        meteostat_success = self.collect_meteostat_data()
-        
-        if not tuya_success and not meteostat_success:
-            logger.warning("No data collected in this cycle")
+        if not tuya_success:
+            logger.error("Failed to collect data from GARNI 925T weather station")
         else:
-            logger.info("Data collection cycle completed successfully")
+            logger.info("Successfully collected data from GARNI 925T weather station")
     
     def start_scheduled_collection(self):
         """Start the scheduled data collection."""
