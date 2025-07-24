@@ -14,11 +14,27 @@ Your weather station works in the Smart Life app, but it's not visible in your T
 2. Click **"Link Tuya App Account"** button
 3. You'll see a QR code and instructions
 
-### Step 3: Connect Using Smart Life App
-1. Open your **Smart Life app** (where your GARNI 925T works)
-2. Go to "Me" → "Settings" → "Account and Security" 
-3. Look for "Developer Options" or "Link Account"
-4. Scan the QR code from your Tuya developer console
+### Step 3: Connect Using Smart Life App (Multiple Methods)
+
+**Method A: Through Profile Settings**
+1. Open Smart Life app → "Profile" (bottom right)
+2. Tap the gear icon (Settings) in top right
+3. Look for "Account and Security" or "Privacy Settings"
+4. Find "Third-party Services" or "Developer Mode"
+5. Scan QR code or enter authorization code
+
+**Method B: Through Device Sharing**
+1. In Smart Life app, go to your GARNI 925T device
+2. Tap the three dots (⋯) or gear icon
+3. Look for "Share Device" or "Device Settings"
+4. Find "Developer Access" or "API Access"
+
+**Method C: Manual Authorization Code**
+1. In Tuya developer console, look for "Authorization Code" instead of QR
+2. Copy the code
+3. In Smart Life app → Profile → Settings
+4. Find "Authorization Code" input field
+5. Paste the code from developer console
 
 ### Step 4: Authorize the Connection
 1. Follow the prompts in the Smart Life app

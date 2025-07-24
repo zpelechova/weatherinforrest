@@ -15,6 +15,7 @@ except ImportError:
     logging.warning("Meteostat not available - install with: pip install meteostat")
 
 from tuya_client import TuyaWeatherClient
+from local_tuya_client import LocalTuyaWeatherClient
 from database import WeatherDatabase
 from config import (
     STATION_LATITUDE, STATION_LONGITUDE, 
