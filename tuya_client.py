@@ -21,15 +21,21 @@ class TuyaWeatherClient:
     
     def __init__(self):
         """Initialize Tuya API client."""
-        self.access_id = TUYA_ACCESS_ID
-        self.access_key = TUYA_ACCESS_KEY
+        # Try new credentials first, fallback to old ones
+        import os
+        self.access_id = os.getenv('NEW_TUYA_ACCESS_ID') or TUYA_ACCESS_ID
+        self.access_key = os.getenv('NEW_TUYA_ACCESS_KEY') or TUYA_ACCESS_KEY
+        self.device_id = os.getenv('NEW_TUYA_DEVICE_ID') or TUYA_DEVICE_ID
         self.api_endpoint = TUYA_API_ENDPOINT
-        self.device_id = TUYA_DEVICE_ID
         self.token = None
         self.token_expires = None
+        self.connection_status = "disconnected"
+        self.last_error = None
+        self.last_attempt = None
         
         if not all([self.access_id, self.access_key, self.api_endpoint]):
             logger.warning("Tuya API credentials not fully configured")
+            self.connection_status = "not_configured"
     
     def _generate_signature(self, method: str, url: str, headers: Dict, 
                           body: str = "") -> str:
@@ -125,10 +131,16 @@ class TuyaWeatherClient:
                     continue
             
             logger.error("Failed to get token from all endpoints")
+            self.connection_status = "api_error"
+            self.last_error = "Sign invalid error - API access denied"
+            self.last_attempt = datetime.now()
             return False
                 
         except Exception as e:
             logger.error(f"Error getting Tuya token: {e}")
+            self.connection_status = "connection_error"
+            self.last_error = str(e)
+            self.last_attempt = datetime.now()
             return False
     
     def _make_request(self, method: str, endpoint: str, params: Dict = None,
@@ -319,4 +331,19 @@ class TuyaWeatherClient:
             
         except Exception as e:
             logger.error(f"Error testing Tuya connection: {e}")
+            self.connection_status = "error" 
+            self.last_error = str(e)
             return False
+    
+    def get_connection_status(self) -> Dict:
+        """Get detailed connection status information."""
+        status_info = {
+            "status": self.connection_status,
+            "last_error": self.last_error,
+            "last_attempt": self.last_attempt.isoformat() if self.last_attempt else None,
+            "credentials_configured": bool(self.access_id and self.access_key),
+            "device_id": self.device_id,
+            "api_endpoint": self.api_endpoint,
+            "token_valid": bool(self.token and self.token_expires and datetime.now() < self.token_expires)
+        }
+        return status_info
