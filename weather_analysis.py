@@ -214,7 +214,8 @@ def create_time_series_chart(df: pd.DataFrame, parameter: str, title: str) -> go
         
         # Add rolling average if enough data
         if len(data) > 24:
-            rolling_avg = data.set_index('timestamp')[parameter].rolling(window='24H').mean()
+            data_indexed = data.set_index('timestamp')
+            rolling_avg = data_indexed[parameter].rolling(window=24, min_periods=1).mean()
             fig.add_trace(go.Scatter(
                 x=rolling_avg.index,
                 y=rolling_avg.values,
@@ -314,6 +315,8 @@ def create_daily_pattern_chart(df: pd.DataFrame, parameter: str) -> go.Figure:
             )
             return fig
         
+        # Convert timestamp to datetime for grouping
+        data['timestamp'] = pd.to_datetime(data['timestamp'])
         data['hour'] = data['timestamp'].dt.hour
         hourly_stats = data.groupby('hour')[parameter].agg(['mean', 'std']).reset_index()
         
