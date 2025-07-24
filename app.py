@@ -307,10 +307,39 @@ def display_historical_data_export():
     with col2:
         st.metric("Parameters", len([col for col in garni_df.columns if garni_df[col].notna().any()]))
     with col3:
-        st.metric("Date Range", f"{garni_df['timestamp'].min().strftime('%m/%d')} - {garni_df['timestamp'].max().strftime('%m/%d')}")
+        min_date = pd.to_datetime(garni_df['timestamp']).min()
+        max_date = pd.to_datetime(garni_df['timestamp']).max()
+        st.metric("Date Range", f"{min_date.strftime('%m/%d')} - {max_date.strftime('%m/%d')}")
     
     # Show sample data
     st.dataframe(garni_df.head(10), use_container_width=True)
+    
+    # Historical data import section
+    st.subheader("📥 Import More Historical Data")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔄 Refresh Device Memory", help="Extract more historical data from your GARNI 925T device"):
+            with st.spinner("Extracting historical data from device..."):
+                try:
+                    from decode_historical_data import HistoricalDataDecoder
+                    decoder = HistoricalDataDecoder()
+                    imported_count = decoder.store_historical_data()
+                    
+                    if imported_count > 0:
+                        st.success(f"✅ Imported {imported_count} new historical readings!")
+                        st.rerun()
+                    else:
+                        st.info("No new historical data found. All available data already imported.")
+                except Exception as e:
+                    st.error(f"Error importing historical data: {e}")
+    
+    with col2:
+        # Show current historical data stats
+        if not garni_df.empty:
+            earliest = pd.to_datetime(garni_df['timestamp']).min()
+            years_back = (pd.Timestamp.now() - earliest).days / 365.25
+            st.info(f"📊 Current data: {len(garni_df)} readings\n📅 Going back {years_back:.1f} years")
     
     # Export button
     if st.button("📤 Export Data", type="primary"):
