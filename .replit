@@ -24,6 +24,10 @@ args = "Weather Monitoring App"
 task = "workflow.run"
 args = "Persistent Weather Collection"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Simple Weather App"
+
 [[workflows.workflow]]
 name = "Weather Monitoring App"
 author = "agent"
@@ -41,9 +45,22 @@ author = "agent"
 task = "shell.exec"
 args = "python persistent_weather_service.py"
 
+[[workflows.workflow]]
+name = "Simple Weather App"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run simple_app.py --server.port 5001"
+waitForPort = 5001
+
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5001
+externalPort = 3000
 
 [agent]
 integrations = ["web_scraper==1.0.0"]

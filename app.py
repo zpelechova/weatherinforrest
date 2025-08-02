@@ -12,10 +12,19 @@ from io import BytesIO
 from database import WeatherDatabase
 from data_collector import WeatherDataCollector
 from tuya_client import TuyaWeatherClient
-from weather_analysis import (
-    WeatherAnalyzer, create_time_series_chart, create_correlation_heatmap,
-    create_daily_pattern_chart, create_summary_dashboard
-)
+try:
+    from weather_analysis import (
+        WeatherAnalyzer, create_time_series_chart, create_correlation_heatmap,
+        create_daily_pattern_chart, create_summary_dashboard
+    )
+except ImportError:
+    # Fallback if weather_analysis has issues
+    WeatherAnalyzer = None
+    create_time_series_chart = lambda df: None
+    create_correlation_heatmap = lambda df: None
+    create_daily_pattern_chart = lambda df: None
+    create_summary_dashboard = lambda df: None
+
 from config import (
     TUYA_ACCESS_ID, TUYA_ACCESS_KEY, STATION_LATITUDE, STATION_LONGITUDE,
     DEFAULT_DATE_RANGE_DAYS
@@ -208,8 +217,9 @@ def display_data_collection_controls():
     
     # Return status for compatibility
     try:
+        from auto_collector_service import get_status
         return get_status()
-    except:
+    except Exception:
         return {"is_running": False, "database_stats": {}}
 
 def display_current_conditions():
