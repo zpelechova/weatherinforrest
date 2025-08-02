@@ -1,13 +1,13 @@
 PERSISTENT WEATHER SERVICE STATUS
 =================================
-Status: RUNNING
+Status: STOPPED
 Started: 2025-08-02 06:50:14
-Uptime: 0h 0m
+Uptime: 0h 2m
 Total Collections: 1
 Successful: 1
 Failed: 0
 Success Rate: 100.0%
 Last Collection: 2025-08-02 08:50:14
 Last Success: 2025-08-02 08:50:15
-Next Collection: 2025-08-02 06:55:15.127312
+Next Collection: 2025-08-02 06:57:27.944620
 PID: 5141

@@ -184,9 +184,14 @@ def display_data_collection_controls():
     st.sidebar.subheader("🔄 Data Collection")
     
     try:
-        from auto_collector_service import get_status, start_service, stop_service
+        from auto_collector_service import get_status, start_service, stop_service, auto_collector
         
         status = get_status()
+        
+        # Auto-restart if stopped
+        if not status['is_running']:
+            auto_collector.start_automatic_collection()
+            status = get_status()  # Get updated status
         
         if status['is_running']:
             st.sidebar.success("✅ Auto-collection: ACTIVE")
@@ -213,6 +218,12 @@ def display_data_collection_controls():
     
     except Exception as e:
         st.sidebar.error(f"Collection service error: {e}")
+        # Try to start service if there's an error
+        try:
+            from auto_collector_service import auto_collector
+            auto_collector.start_automatic_collection()
+        except:
+            pass
     
     # Manual collection button
     if st.sidebar.button("📥 Collect Now"):
@@ -442,11 +453,16 @@ def display_historical_data_export():
                     st.error(f"Error: {e}")
     
     with col3:
-        # Automatic collection control
+        # Automatic collection control with auto-restart
         try:
-            from auto_collector_service import get_status, start_service, stop_service
+            from auto_collector_service import get_status, start_service, stop_service, auto_collector
             
             status = get_status()
+            
+            # Auto-restart if stopped
+            if not status['is_running']:
+                auto_collector.start_automatic_collection()
+                status = get_status()  # Get updated status
             
             if status['is_running']:
                 st.success("🔄 Auto-collection: ACTIVE")
@@ -472,6 +488,12 @@ def display_historical_data_export():
                     st.rerun()
         except Exception as e:
             st.error(f"Auto-collection error: {e}")
+            # Try to start service if there's an error
+            try:
+                from auto_collector_service import auto_collector
+                auto_collector.start_automatic_collection()
+            except:
+                pass
     
     # Historical data import section
     st.subheader("📥 Import Historical Data from Smart Life App")
