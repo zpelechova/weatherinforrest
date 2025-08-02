@@ -127,3 +127,16 @@ The architecture prioritizes simplicity and ease of deployment while maintaining
 - **Solution Implemented**: Robust automatic collection system compensates for API limitations
 
 The system follows user preference for iterative deployment: deploy early for data collection, then enhance visualization based on accumulated real-world data patterns.
+
+## Monitoring and Review Schedule
+
+### Automated Monitoring (August 2025)
+- **Hourly Checks**: Automated verification of weather data collection (12 readings/hour expected)
+- **Daily Summaries**: Collection statistics and weather range reports
+- **Alert System**: Notifications for collection failures or service issues
+- **Log Files**: Detailed monitoring history for troubleshooting
+
+### Scheduled Review
+- **Three Day Review**: August 5, 2025 - Assess data collection performance and plan dashboard enhancements
+- **Data Target**: 864+ comprehensive readings over 3 days (288/day)
+- **Goal**: Use accumulated real-world data to inform dashboard customization priorities
