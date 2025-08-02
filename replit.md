@@ -8,6 +8,17 @@ This is a comprehensive weather monitoring platform built with Streamlit that co
 
 Preferred communication style: Simple, everyday language.
 
+**Development Approach**: Iterative deployment and data-driven design
+- Deploy early for production data collection
+- Collect substantial dataset first, then revisit dashboard design
+- Focus on data accumulation before optimizing visualization
+- Preference for building comprehensive dataset, then customizing displays based on actual data patterns
+
+**Data Collection Priority**: Automated comprehensive collection (288 readings/day) taking precedence over historical data import
+- Automatic collection every 5 minutes established as primary data source
+- Historical data import secondary priority
+- Focus on building substantial future dataset for analysis
+
 ## System Architecture
 
 The application follows a modular architecture with clear separation of concerns:
@@ -96,3 +107,23 @@ The application is designed for local deployment with the following characterist
 - Suitable for personal weather monitoring or small-scale applications
 
 The architecture prioritizes simplicity and ease of deployment while maintaining modularity for future enhancements and scalability.
+
+## Recent Changes and Status (August 2025)
+
+### Data Collection System Status
+- **Automatic Collection**: Active and deployed, collecting every 5 minutes (288 readings/day)
+- **Current Data**: Building comprehensive dataset from GARNI 925T weather station
+- **Location**: Kozlovice (corrected from Prague in all system components)
+- **Parameters**: Temperature, humidity, pressure, wind speed, UV index
+
+### Deployment Strategy
+- **Current Status**: Deployed for production data collection
+- **Data-First Approach**: Accumulate substantial dataset before dashboard redesign
+- **Future Enhancement**: Dashboard visualization and analysis features to be revisited after sufficient data collection
+
+### Known Limitations Addressed
+- **Tuya API Trial**: Limited historical data access (sparse readings vs comprehensive logs)
+- **Smart Life Export**: Manual export process required for historical data import
+- **Solution Implemented**: Robust automatic collection system compensates for API limitations
+
+The system follows user preference for iterative deployment: deploy early for data collection, then enhance visualization based on accumulated real-world data patterns.
