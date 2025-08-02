@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from data_collector import WeatherDataCollector
 from database import WeatherDatabase
 import logging
+from timezone_utils import now_prague, format_prague_time
 
 # Configure logging
 logging.basicConfig(
@@ -44,11 +45,11 @@ class AutoCollectorService:
             success = self.collector.collect_tuya_data()
             
             self.stats['total_collections'] += 1
-            self.stats['last_collection'] = datetime.now()
+            self.stats['last_collection'] = now_prague()
             
             if success:
                 self.stats['successful_collections'] += 1
-                self.stats['last_success'] = datetime.now()
+                self.stats['last_success'] = now_prague()
                 
                 # Log collection success with current readings
                 latest = self.db.get_latest_data()

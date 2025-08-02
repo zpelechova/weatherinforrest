@@ -199,10 +199,10 @@ def display_data_collection_controls():
                 stop_service()
                 st.rerun()
             
-            # Show next collection time
+            # Show next collection time in Prague timezone
             if status.get('next_collection'):
-                next_time = status['next_collection'].strftime('%H:%M:%S')
-                st.sidebar.info(f"Next: {next_time}")
+                next_time_prague = format_prague_time(status['next_collection'], '%H:%M:%S')
+                st.sidebar.info(f"Next: {next_time_prague} Prague")
             
             # Show success rate
             stats = status['stats']
@@ -470,10 +470,10 @@ def display_historical_data_export():
                     stop_service()
                     st.rerun()
                 
-                # Show next collection time
+                # Show next collection time in Prague timezone
                 if status.get('next_collection'):
-                    next_time = status['next_collection'].strftime('%H:%M:%S')
-                    st.info(f"Next collection: {next_time}")
+                    next_time_prague = format_prague_time(status['next_collection'], '%H:%M:%S')
+                    st.info(f"Next collection: {next_time_prague} Prague")
                 
                 # Show success rate
                 stats = status['stats']
