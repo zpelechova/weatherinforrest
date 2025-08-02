@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import logging
 import os
 from io import BytesIO
+from timezone_utils import now_prague, format_prague_time, prague_time_info
 
 # Import custom modules
 from database import WeatherDatabase
@@ -300,7 +301,9 @@ def display_current_conditions():
                 value=f"{latest['air_quality_aqi']}"
             )
         
-        st.info(f"Last updated: {latest['timestamp']}")
+        # Format timestamp in Prague time
+        timestamp_str = format_prague_time(pd.to_datetime(latest['timestamp']))
+        st.info(f"Last updated: {timestamp_str} (Prague time)")
         st.info(f"Data source: {latest['source']}")
 
 def display_historical_data_export():

@@ -26,3 +26,6 @@ REQUEST_TIMEOUT = 30
 # Chart Configuration
 DEFAULT_CHART_HEIGHT = 400
 DEFAULT_DATE_RANGE_DAYS = 7
+
+# Timezone Configuration
+TIMEZONE = "Europe/Prague"

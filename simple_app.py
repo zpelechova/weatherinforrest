@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from database import WeatherDatabase
 from data_collector import WeatherDataCollector
 from config import STATION_LATITUDE, STATION_LONGITUDE
+from timezone_utils import now_prague, format_prague_time
 
 # Page configuration
 st.set_page_config(
@@ -91,7 +92,7 @@ if not latest_data.empty:
         update_time = latest['timestamp']
         if isinstance(update_time, str):
             update_time = pd.to_datetime(update_time)
-        st.info(f"Last update: {update_time.strftime('%Y-%m-%d %H:%M:%S')}")
+        st.info(f"Last update: {format_prague_time(update_time)} (Prague time)")
 else:
     st.warning("No weather data available. Start data collection to see current conditions.")
 
@@ -158,5 +159,5 @@ with st.expander("🔍 System Status"):
     **Location:** Kozlovice ({STATION_LATITUDE:.4f}, {STATION_LONGITUDE:.4f})
     **Device:** GARNI 925T Smart Weather Station
     **Collection:** Every 5 minutes (288 readings/day target)
-    **Current Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    **Current Time:** {format_prague_time(now_prague())} (Prague time)
     """)

@@ -13,6 +13,7 @@ import sys
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
+from timezone_utils import now_prague, format_prague_time
 
 # Import our modules
 from data_collector import WeatherDataCollector
@@ -55,14 +56,14 @@ class PersistentWeatherService:
         try:
             logger.info("Starting weather data collection...")
             self.stats['total_collections'] += 1
-            self.stats['last_collection'] = datetime.now()
+            self.stats['last_collection'] = now_prague()
             
             # Collect from Tuya device
             success = self.collector.collect_tuya_data()
             
             if success:
                 self.stats['successful_collections'] += 1
-                self.stats['last_success'] = datetime.now()
+                self.stats['last_success'] = now_prague()
                 
                 # Get latest data to show in logs
                 latest = self.db.get_latest_data(limit=1)
@@ -104,15 +105,16 @@ class PersistentWeatherService:
             status_content = f"""PERSISTENT WEATHER SERVICE STATUS
 =================================
 Status: {'RUNNING' if self.running else 'STOPPED'}
-Started: {self.stats['start_time'].strftime('%Y-%m-%d %H:%M:%S') if self.stats['start_time'] else 'Never'}
+Started: {format_prague_time(self.stats['start_time']) if self.stats['start_time'] else 'Never'}
 Uptime: {uptime}
 Total Collections: {self.stats['total_collections']}
 Successful: {self.stats['successful_collections']}
 Failed: {self.stats['failed_collections']}
 Success Rate: {success_rate:.1f}%
-Last Collection: {self.stats['last_collection'].strftime('%Y-%m-%d %H:%M:%S') if self.stats['last_collection'] else 'Never'}
-Last Success: {self.stats['last_success'].strftime('%Y-%m-%d %H:%M:%S') if self.stats['last_success'] else 'Never'}
-Next Collection: {datetime.now() + timedelta(minutes=5)}
+Last Collection: {format_prague_time(self.stats['last_collection']) if self.stats['last_collection'] else 'Never'}
+Last Success: {format_prague_time(self.stats['last_success']) if self.stats['last_success'] else 'Never'}
+Next Collection: {format_prague_time(now_prague() + timedelta(minutes=5))}
+Timezone: Europe/Prague (CET/CEST)
 PID: {os.getpid()}
 """
             
@@ -135,7 +137,7 @@ PID: {os.getpid()}
         logger.info("Location: Kozlovice")
         
         self.running = True
-        self.stats['start_time'] = datetime.now()
+        self.stats['start_time'] = now_prague()
         
         # Schedule data collection every 5 minutes
         schedule.every(5).minutes.do(self.collect_weather_data)
