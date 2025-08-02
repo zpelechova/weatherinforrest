@@ -2,11 +2,11 @@
 
 import os
 
-# Tuya API Configuration
-TUYA_ACCESS_ID = os.getenv("TUYA_ACCESS_ID", "")
-TUYA_ACCESS_KEY = os.getenv("TUYA_ACCESS_KEY", "")
+# Tuya API Configuration - Using NEW credentials from working setup
+TUYA_ACCESS_ID = os.getenv("NEW_TUYA_ACCESS_ID", os.getenv("TUYA_ACCESS_ID", ""))
+TUYA_ACCESS_KEY = os.getenv("NEW_TUYA_ACCESS_KEY", os.getenv("TUYA_ACCESS_KEY", ""))
 TUYA_API_ENDPOINT = os.getenv("TUYA_API_ENDPOINT", "https://openapi.tuyaeu.com")
-TUYA_DEVICE_ID = os.getenv("TUYA_DEVICE_ID", "")
+TUYA_DEVICE_ID = os.getenv("NEW_TUYA_DEVICE_ID", os.getenv("TUYA_DEVICE_ID", ""))
 
 # Database Configuration
 DATABASE_PATH = "weather_data.db"
