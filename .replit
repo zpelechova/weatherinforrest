@@ -20,6 +20,10 @@ author = "agent"
 task = "workflow.run"
 args = "Weather Monitoring App"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Persistent Weather Collection"
+
 [[workflows.workflow]]
 name = "Weather Monitoring App"
 author = "agent"
@@ -28,6 +32,14 @@ author = "agent"
 task = "shell.exec"
 args = "streamlit run app.py --server.port 5000"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Persistent Weather Collection"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python persistent_weather_service.py"
 
 [[ports]]
 localPort = 5000
