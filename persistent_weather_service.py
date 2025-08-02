@@ -97,7 +97,7 @@ class PersistentWeatherService:
             
             uptime = ""
             if self.stats['start_time']:
-                uptime_delta = datetime.now() - self.stats['start_time']
+                uptime_delta = now_prague().replace(tzinfo=None) - self.stats['start_time'].replace(tzinfo=None)
                 hours = int(uptime_delta.total_seconds() // 3600)
                 minutes = int((uptime_delta.total_seconds() % 3600) // 60)
                 uptime = f"{hours}h {minutes}m"
