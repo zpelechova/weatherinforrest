@@ -46,6 +46,21 @@ st.set_page_config(
 if 'data_collector_started' not in st.session_state:
     st.session_state.data_collector_started = False
 
+# Auto-start collection service if not running
+@st.cache_resource
+def ensure_collection_service():
+    """Ensure auto-collection service is running"""
+    try:
+        from auto_collector_service import auto_collector
+        auto_collector.start_automatic_collection()
+        return True
+    except Exception as e:
+        st.error(f"Failed to start collection service: {e}")
+        return False
+
+# Start collection service
+ensure_collection_service()
+
 def check_configuration():
     """Check if required configuration is available."""
     config_status = {
