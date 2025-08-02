@@ -155,48 +155,62 @@ def display_configuration_status():
     return all(config.values())
 
 def display_data_collection_controls():
-    """Display data collection controls in sidebar."""
+    """Display data collection controls in sidebar using auto collector service."""
     st.sidebar.subheader("🔄 Data Collection")
     
-    collector = get_collector()
-    status = collector.get_collection_status()
+    try:
+        from auto_collector_service import get_status, start_service, stop_service
+        
+        status = get_status()
+        
+        if status['is_running']:
+            st.sidebar.success("✅ Auto-collection: ACTIVE")
+            if st.sidebar.button("⏹️ Stop Collection"):
+                stop_service()
+                st.rerun()
+            
+            # Show next collection time
+            if status.get('next_collection'):
+                next_time = status['next_collection'].strftime('%H:%M:%S')
+                st.sidebar.info(f"Next: {next_time}")
+            
+            # Show success rate
+            stats = status['stats']
+            if stats['total_collections'] > 0:
+                success_rate = (stats['successful_collections'] / stats['total_collections']) * 100
+                st.sidebar.metric("Success Rate", f"{success_rate:.1f}%")
+        else:
+            st.sidebar.warning("⏸️ Auto-collection: STOPPED")
+            if st.sidebar.button("▶️ Start Collection (5min)"):
+                start_service()
+                st.sidebar.success("Started automatic collection!")
+                st.rerun()
     
-    if status["is_running"]:
-        st.sidebar.success("✅ Collection Running")
-        if st.sidebar.button("Stop Collection"):
-            collector.stop_scheduled_collection()
-            st.session_state.data_collector_started = False
-            st.rerun()
-    else:
-        st.sidebar.warning("⏸️ Collection Stopped")
-        if st.sidebar.button("Start Collection"):
-            collector.start_scheduled_collection()
-            st.session_state.data_collector_started = True
-            st.rerun()
+    except Exception as e:
+        st.sidebar.error(f"Collection service error: {e}")
     
     # Manual collection button
     if st.sidebar.button("📥 Collect Now"):
         with st.sidebar:
             with st.spinner("Collecting data..."):
-                collector.run_collection_cycle()
-        st.sidebar.success("Data collection completed!")
+                try:
+                    from data_collector import WeatherDataCollector
+                    collector = WeatherDataCollector()
+                    success = collector.collect_tuya_data()
+                    
+                    if success:
+                        st.sidebar.success("✅ Data collected!")
+                    else:
+                        st.sidebar.error("❌ Collection failed")
+                except Exception as e:
+                    st.sidebar.error(f"Error: {e}")
         st.rerun()
     
-    # Historical data collection
-    st.sidebar.subheader("📚 Historical Data")
-    days_back = st.sidebar.selectbox("Collect Historical Data", [7, 30, 90, 365])
-    
-    if st.sidebar.button("Download Historical Data"):
-        with st.sidebar:
-            with st.spinner(f"Collecting {days_back} days of historical data..."):
-                success = collector.collect_historical_data(days_back)
-        if success:
-            st.sidebar.success(f"✅ Historical data collected ({days_back} days)")
-        else:
-            st.sidebar.error("❌ Failed to collect historical data")
-        st.rerun()
-    
-    return status
+    # Return status for compatibility
+    try:
+        return get_status()
+    except:
+        return {"is_running": False, "database_stats": {}}
 
 def display_current_conditions():
     """Display current weather conditions."""
